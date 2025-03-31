@@ -116,3 +116,4 @@ config.py
 static/uploads
 src/invenflask/_version.py
 uploads/*
+_version.py

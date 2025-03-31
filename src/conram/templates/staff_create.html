@@ -58,6 +58,7 @@
     <h1>{% block title %} Create Staff {% endblock %}</h1>
     <form method="POST" id='theform' , class="a-form">
        <label for="title">Staff ID</label>
+       <span class="required">*</span>
        <br>
        <input type="text" name="staffid" id="staffid"
               placeholder="Staff ID"
@@ -65,10 +66,12 @@
               autocomplete="off"
               required="required" 
               onkeypress="return runScript(event);"></input>
+
        <!-- <input type="checkbox" id="staffgen" name="staffgen"/>
        <label for="staffgen">Auto Generate Staff ID</label>        -->
        <br>
        <label for="title">First Name</label>
+         <span class="required red">*</span>
        <br>
        <input type="text" name="firstname" id="firstname"
               placeholder="First Name"
@@ -82,11 +85,11 @@
        <input type="text" name="lastname" id="lastname"
               placeholder="Last Name"
               value="{{ request.form['lastname'] }}"
-              required="required"
               autocomplete="off"
               onkeypress="return runScript2(event);"></input>
        <br>
        <label for="title">Title</label>
+         <span class="required">*</span>
        <br>
        <input type="text" name="title" id="title"
               placeholder="Title"
