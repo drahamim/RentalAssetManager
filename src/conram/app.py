@@ -1,7 +1,8 @@
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 import subprocess
 
+import click
 import pandas as pd
 from flask import Flask, flash, redirect, render_template, request, url_for, session
 from flask_bootstrap import Bootstrap5
@@ -11,8 +12,12 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
 from flask_moment import Moment
 from sqlalchemy import func
-from .models import Asset, Staff, Checkout, History, db, GlobalSet
+from .models import Asset, Staff, Checkout, History, db, GlobalSet, Role
 from .forms import SettingsForm
+
+from flask_login import LoginManager, login_user, logout_user, current_user, login_required
+from flask_security import Security, SQLAlchemyUserDatastore, roles_accepted, UserMixin, RoleMixin
+from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
@@ -22,6 +27,27 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'os.urandom(24)')
 app.config['upload_folder'] = '/tmp/uploads'
 moment = Moment(app)
+bcrypt = Bcrypt(app)
+
+
+# Flask Security Setup
+user_datastore = SQLAlchemyUserDatastore(db, Staff, Role)
+security = Security(app, user_datastore)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'signin'
+
+
+@login_manager.user_loader
+def load_user(id):
+    return Staff.query.filter_by(fs_uniquifier=id).first()
+
+
+@login_manager.unauthorized_handler
+def unauthorized():
+    flash('You must be logged in to access this page.', 'warning')
+    return redirect(url_for('signin', next=request.endpoint))
+
 
 if not os.path.exists(app.config['upload_folder']):
     os.makedirs(app.config['upload_folder'])
@@ -32,6 +58,17 @@ with app.app_context():
     db.create_all()
     db.session.commit()
 migrate = Migrate(app, db)
+
+# Init Roles
+with app.app_context():
+    if not db.session.query(Role).filter(Role.name == 'admin').first():
+        db.session.add(Role(name='admin', id=1, description='Admin Role'))
+        app.logger.info('Admin role created')
+    if not db.session.query(Role).filter(Role.name == 'user').first():
+        db.session.add(Role(name='user', id=2, description='User Role'))
+        app.logger.info('User role created')
+    db.session.commit()
+    app.logger.info('Roles created')
 
 # @app.context
 # def inject_settings():
@@ -56,6 +93,17 @@ def get_version():
 # ASSET ROUTES
 
 
+def redirect_dest(fallback):
+    dest = request.args.get('next')
+    try:
+        dest_url = dest
+    except Exception:
+        dest_url = fallback
+    if dest == None:
+        dest_url = fallback
+    return redirect(dest_url)
+
+
 @app.route('/')
 def index():
     assets = db.session.query(Asset).all()
@@ -76,6 +124,8 @@ def index():
 
 
 @app.route('/create/asset', methods=('GET', 'POST'))
+@login_required
+@roles_accepted('admin')
 def asset_create():
 
     if request.method == 'POST':
@@ -276,7 +326,7 @@ def checkout():
                 db.session.add(Checkout(
                     assetid=asset.id, staffid=staffer.id,
                     department=staffer.department,
-                    timestamp=datetime.now()))
+                    timestamp=datetime.now(timezone.utc)))
                 print('update asset')
                 db.session.query(Asset).filter(
                     Asset.id == asset.id).update(values={
@@ -290,7 +340,7 @@ def checkout():
                     db.session.add(Checkout(
                         assetid=accessory.id, staffid=staffer.id,
                         department=staffer.department,
-                        timestamp=datetime.now()))
+                        timestamp=datetime.now(timezone.utc)))
                     db.session.query(Asset).filter(func.lower(
                         Asset.id) == accessory_id.lower()).update(values={
                             'asset_status': 'checkedout'})
@@ -335,8 +385,7 @@ def return_asset():
                     department=staffer.department,
                     division=staffer.division,
                     checkouttime=checkout_info.timestamp,
-                    returntime=datetime.now()
-                ))
+                    returntime=datetime.now(timezone.utc)))
                 print('update asset')
                 db.session.query(Asset).filter(
                     Asset.id == checkout_info.assetid).update(values={
@@ -583,3 +632,79 @@ def search():
         app.logger.info
         (len(staff))
         return render_template('search.html', assets=asset, staff=staff)
+
+
+# @app.route('/signup', methods=['GET', 'POST'])
+# def signup():
+#     msg = ""
+#     if request.method == 'POST':
+#         user = User.query.filter_by(
+#             email=request.form['email']).first()
+#         if user:
+#             msg = "User already exists"
+#             return render_template('signup.html', msg=msg)
+#         user = User(username=request.form['username'],
+#                     first_name=request.form['first_name'],
+#                     last_name=request.form['last_name'],
+#                     email=request.form['email'],
+#                     password=bcrypt.generate_password_hash(request.form['password']).decode('utf-8'))
+#         user.roles.append(Role.query.filter_by(name='user').first())
+#         user.active = True
+#         db.session.add(user)
+#         db.session.commit()
+#         login_user(user)
+#         flash('You have successfully signed up.', 'success')
+#         return redirect(url_for('index'))
+#     return render_template('signup.html')
+
+
+@app.route('/signin', methods=['GET', 'POST'])
+def signin():
+    if request.method == 'POST':
+        user = Staff.query.filter_by(username=request.form['username']).first()
+        if user and  bcrypt.check_password_hash(user.password, request.form['password']):
+            login_user(user)
+            db.session.query(Staff).filter_by(
+                username=user.username).update(
+                    {Staff.last_login: datetime.now(timezone.utc)})
+            db.session.commit()
+            flash('Logged in successfully.', 'success')
+            return redirect_dest(fallback=url_for('index'))
+        else:
+            flash('Invalid username or password.')
+            return render_template('signin.html')
+    return render_template('signin.html')
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('signin'))
+
+
+@app.route("/my_account")
+@login_required
+@roles_accepted('admin', 'user')
+def my_account():
+    user = Staff.query.filter_by(id=current_user.id).first()
+    return render_template('my_account.html', user=user)
+
+
+@app.cli.command('create-admin')
+@click.argument('password')
+def create_admin(password):
+    """Creates an admin user."""
+    with app.app_context():
+        user_datastore.create_user(
+            id="ADMIN",
+            first_name='Admin',
+            last_name='',
+            division='',
+            department='',
+            title='',            
+            username='admin', 
+            password=bcrypt.generate_password_hash(password).decode('utf-8'))
+        db.session.commit()
+        app.logger.info('Admin user created')
+        print('Admin user created')

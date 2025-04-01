@@ -1,0 +1,26 @@
+{% extends "base.html" %} 
+{% block content %} 
+<h2>{% block title %}
+    Sign in
+    {% endblock %}</h2>
+
+<!-- Show only if user is logged in -->
+{% if current_user.is_authenticated %} You are already logged in.
+
+<!-- Show if user is NOT logged in -->
+{% else %}
+
+<form action="{{ url_for('signin', next=request.args.get("next")) }}" method="POST" id="signin-form">
+    <label>Username</label><span class="required">*</span>
+    <input type="text" name="username" required placeholder="Username"/><br><br>
+    
+    <label>Password </label><span class="required">*</span>
+    <input type="password" name="password" required placeholder="Password"/><br><br>
+    
+    <input class="btn btn-primary" type="submit" value="Sign In"><br><br>
+
+    <span>Don't have an account?</span>
+    <a href="/signup">Sign up</a>
+</form>
+
+{% endif %} {% endblock %}
