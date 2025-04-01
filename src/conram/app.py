@@ -720,6 +720,7 @@ def create_admin(password):
             department='',
             title='',
             username='admin',
+            active=True,
             roles=['admin'],
             password=bcrypt.generate_password_hash(password).decode('utf-8'))
         db.session.commit()

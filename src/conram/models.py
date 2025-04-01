@@ -7,8 +7,8 @@ db = SQLAlchemy()
 
 roles_users = db.Table(
     'roles_users',
-    db.Column('staff_id', db.String, db.ForeignKey('staffs.id')),
-    db.Column('role_id', db.Integer, db.ForeignKey('roles.id'))
+    db.Column('staff_id', db.String, db.ForeignKey('staffs.id', ondelete='CASCADE')),
+    db.Column('role_id', db.Integer, db.ForeignKey('roles.id', ondelete='CASCADE'))
 )
 
 
@@ -32,12 +32,12 @@ class Staff(db.Model, UserMixin):
     title = Column(String, nullable=False)
     username = Column(String, nullable=False)
     password = Column(String, nullable=False)
-    is_active = Column(db.Boolean(), default=False)
+    active = Column(db.Boolean(), default=False)
     fs_uniquifier = Column(String(150), unique=True,
                            nullable=False, default=lambda: str(uuid.uuid4()))
     last_login = Column(DateTime, nullable=True)
     roles = db.relationship('Role', secondary=roles_users,
-                            backref='staffed')
+                            backref='staffed', cascade='all,delete')
 
 
 class Checkout(db.Model):
