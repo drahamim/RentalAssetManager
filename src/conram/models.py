@@ -40,7 +40,6 @@ class Staff(db.Model, UserMixin):
                             backref='staffed')
 
 
-
 class Checkout(db.Model):
     __tablename__ = 'checkouts'
 

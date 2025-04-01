@@ -181,6 +181,8 @@ def asset_edit(asset_id):
 
 
 @app.route('/delete/asset/<asset_id>', methods=('POST',))
+@login_required
+@roles_accepted('admin')
 def asset_delete(asset_id):
     db.session.delete(Asset.query.get(asset_id))
     db.session.commit()
@@ -192,6 +194,7 @@ def asset_delete(asset_id):
 
 
 @app.route('/create/staff', methods=('GET', 'POST'))
+@login_required
 def staff_create():
 
     if request.method == 'POST':
@@ -230,12 +233,15 @@ def staff_create():
 
 
 @app.route('/staffs')
+@login_required
 def staffs():
     staff_list = db.session.query(Staff).order_by('id').all()
     return render_template('staff.html', staffs=staff_list)
 
 
 @app.route('/edit/staff/<staff_id>', methods=('GET', 'POST'))
+@login_required
+@roles_accepted('admin')
 def staff_edit(staff_id):
     staff = db.session.query(Staff).filter_by(id=staff_id).first()
     if request.method == 'POST':
@@ -268,6 +274,7 @@ def staff_edit(staff_id):
 
 
 @app.route('/checkout', methods=('GET', 'POST'))
+@login_required
 def checkout():
 
     if request.method == 'POST':
@@ -359,6 +366,7 @@ def checkout():
 
 
 @app.route('/return_asset', methods=('GET', 'POST'))
+@login_required
 def return_asset():
     if request.method == 'POST':
         asset_id = request.form['id']
@@ -431,6 +439,7 @@ def return_asset():
 
 
 @app.route('/history')
+@login_required
 def history():
     try:
         history_list = db.session.query(History).order_by('returntime').all()
@@ -444,12 +453,14 @@ def history():
 
 
 @app.route('/assets')
+@login_required
 def assets():
     asset_list = Asset.query.all()
     return render_template('status.html', assets=asset_list)
 
 
 @app.route('/single_history/<rq_type>/<item_id>')
+@login_required
 def single_history(rq_type, item_id):
 
     if rq_type == 'asset':
@@ -470,6 +481,8 @@ def single_history(rq_type, item_id):
 
 # IMPORT TASKS
 @app.route('/bulk_import', methods=('GET', 'POST'))
+@login_required
+@roles_accepted('admin')
 def bulk_import():
     if request.method == 'POST':
         uploaded_file = request.files.get('file')
@@ -533,6 +546,7 @@ def parseCSV_staff(
 
 
 @app.route('/show_data', methods=["GET", "POST"])
+@login_required
 def showData():
     # Retrieving uploaded file path from session
     data_file_path = session.get('uploaded_data_file_path', None)
@@ -574,6 +588,8 @@ def showData():
 
 
 @app.route('/settings', methods=['GET', 'POST'])
+@login_required
+@roles_accepted('admin')
 def settings():
     form = SettingsForm()
     if form.validate_on_submit():
@@ -590,6 +606,7 @@ def settings():
 
 
 @app.route('/search', methods=["GET", "POST"])
+@login_required
 def search():
     app.logger.info('Search request')
     query = request.args.get('query')
@@ -662,7 +679,7 @@ def search():
 def signin():
     if request.method == 'POST':
         user = Staff.query.filter_by(username=request.form['username']).first()
-        if user and  bcrypt.check_password_hash(user.password, request.form['password']):
+        if user and bcrypt.check_password_hash(user.password, request.form['password']):
             login_user(user)
             db.session.query(Staff).filter_by(
                 username=user.username).update(
@@ -685,7 +702,6 @@ def logout():
 
 @app.route("/my_account")
 @login_required
-@roles_accepted('admin', 'user')
 def my_account():
     user = Staff.query.filter_by(id=current_user.id).first()
     return render_template('my_account.html', user=user)
@@ -702,8 +718,9 @@ def create_admin(password):
             last_name='',
             division='',
             department='',
-            title='',            
-            username='admin', 
+            title='',
+            username='admin',
+            roles=['admin'],
             password=bcrypt.generate_password_hash(password).decode('utf-8'))
         db.session.commit()
         app.logger.info('Admin user created')
