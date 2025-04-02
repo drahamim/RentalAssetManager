@@ -1,4 +1,12 @@
 {% extends 'base.html' %}
+{% block head %}
+    <script type="text/javascript">
+        // Focus on Asset ID on load
+        function FocusOnLoad() {
+            document.getElementById("id").focus();
+        }
+    </script>
+{% endblock %}
 
 {% block content %}
     <h1>{% block title %} Create Asset {% endblock %}</h1>
@@ -6,7 +14,9 @@
        <label for="title">ID</label>
        <span class="required">*</span>
        <br>
-       <input type="text" name="id"
+       <input type="text" name="id" id="id"
+              onfocus="FocusOnLoad()"
+              onkeydown="if (event.keyCode == 13) {document.getElementById('asset_type').focus(); return false;}"
               placeholder="Asset ID"
               required="required"
               value="{{ request.form['id'] }}"></input>
