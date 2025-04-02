@@ -1,7 +1,8 @@
 import os
 from datetime import datetime, timezone
 import subprocess
-
+from random import choice
+from string import ascii_uppercase
 import click
 import pandas as pd
 from flask import Flask, flash, redirect, render_template, request, url_for, session
@@ -195,8 +196,9 @@ def asset_delete(asset_id):
 
 @app.route('/create/staff', methods=('GET', 'POST'))
 @login_required
+@roles_accepted('admin')
 def staff_create():
-
+    roles_list = db.session.query(Role).all()
     if request.method == 'POST':
         staff_id = request.form['staffid']
         first_name = request.form['firstname']
@@ -204,6 +206,13 @@ def staff_create():
         division = request.form['division']
         department = request.form['department']
         title = request.form['title']
+        if request.form.getlist('roles') in roles_list:
+            roles = request.form.getlist('roles')
+            password = request.form['password']
+        else:
+            roles = []
+            password = (''.join(choice(ascii_uppercase) for i in range(12)))
+     
 
         if not staff_id or not first_name:
             flash(
@@ -212,6 +221,7 @@ def staff_create():
 
         if db.session.query(Staff).filter(
                 func.lower(Staff.id) == staff_id.lower()).all():
+            app.logger.info(f'Staff {staff_id} already exists')
             flash(
                 'Staff already exists',
                 "warning")
@@ -220,7 +230,10 @@ def staff_create():
             try:
                 db.session.add(Staff(id=staff_id, first_name=first_name,
                                      last_name=last_name, division=division,
-                                     department=department, title=title))
+                                     department=department, title=title,
+                                     password=bcrypt.generate_password_hash(
+                                         password).decode('utf-8'),
+                                     roles=roles))
                 db.session.commit()
                 return redirect(url_for('staffs'))
             except Exception as e:
@@ -229,7 +242,7 @@ def staff_create():
                     "Staff already exists", 'warning')
                 return redirect(url_for('staff_create'))
 
-    return render_template('staff_create.html')
+    return render_template('staff_create.html', roles=roles_list)
 
 
 @app.route('/staffs')
@@ -244,17 +257,22 @@ def staffs():
 @roles_accepted('admin')
 def staff_edit(staff_id):
     staff = db.session.query(Staff).filter_by(id=staff_id).first()
+    if current_user.id == staff_id:
+        flash(
+            'You cannot edit your own account', 'warning')
+        return redirect(url_for('staffs'))
     if request.method == 'POST':
         first_name = request.form['firstname']
         last_name = request.form['lastname']
         division = request.form['division']
         department = request.form['department']
         title = request.form['title']
+        roles = request.form.getlist('roles')
 
         db.session.query(Staff).filter(Staff.id == staff_id).update(
             values={Staff.first_name: first_name, Staff.last_name: last_name,
                     Staff.division: division, Staff.department: department,
-                    Staff.title: title})
+                    Staff.title: title, Staff.roles: roles})
         db.session.commit()
         return redirect(url_for('staffs'))
 
