@@ -2,7 +2,7 @@
 {% block head %}
     <script type="text/javascript">
         // Focus on Asset ID on load
-        function FocusOnLoad() {
+        window.onload = function FocusOnLoad() {
             document.getElementById("id").focus();
         }
     </script>
@@ -15,8 +15,6 @@
        <span class="required">*</span>
        <br>
        <input type="text" name="id" id="id"
-              onfocus="FocusOnLoad()"
-              onkeydown="if (event.keyCode == 13) {document.getElementById('asset_type').focus(); return false;}"
               placeholder="Asset ID"
               required="required"
               value="{{ request.form['id'] }}"></input>
@@ -37,8 +35,8 @@
        <br>
        <label for="status">Asset Status</label>
        <br>
-       <select id="asset_status" name="sset_status">
-              <option value="" disabled selected>Select Status</option>
+       <select id="asset_status" name="asset_status">
+              <option value="">Select Status</option>
               <option value="Available">Available</option>
               <option value="Good">Good</option>
               <option value="Damaged">Damaged</option>

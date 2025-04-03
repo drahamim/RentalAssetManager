@@ -43,39 +43,7 @@
                   return false;
               }
           };
-        window.onload = function validateRole() {
-            const element = document.getElementById("roles");
-
-            if (document.getElementById("roles")) {
-                console.log("Selected role:"  + element.value);
-            } else {
-            console.log("No role selected");
-        }
-        }
-    
-
-
-      function showPasswordField() {
-            const selectedRole = document.getElementById("roles").value;
-            const passwordField = document.getElementById("password");
-            const passwordLabel = document.getElementById("password-label");
-            const passwordRequired = document.getElementById("password-required");
-            console.log("Selected role:"  + selectedRole);
-
-            if (selectedRole === "1" || selectedRole === "2") {
-                passwordField.style.display = "block";
-                passwordLabel.style.display = "inline";
-                passwordRequired.style.display = "inline";
-                passwordField.required = true;
-            } else {
-                passwordField.style.display = "none";
-                passwordLabel.style.display = "none";
-                passwordRequired.style.display = "none";
-                passwordField.required = false;
-            }
-        };
     </script>
-
 
 {% endblock%}
 
@@ -83,15 +51,6 @@
 {% block content %}
     <h1>{% block title %} Create Staff {% endblock %}</h1>
     <form method="POST" id='theform' name='thisform' , class="a-form">
-        <label for="roles">Primary Role</label>
-        <br>
-        <select name="roles" id="roles" onchange="showPasswordField();">
-            <option value="0">None</option>
-            {% for role in roles %}
-                <option value="{{ role.id }}">{{ role.name }}</option>
-            {% endfor %}
-        </select>
-        <br>
        <label for="title">Staff ID</label>
        <span class="required">*</span>
        <br>
@@ -148,15 +107,6 @@
               value="{{ request.form['department'] }}"
               autocomplete="off"></input>
        <br>
-        <label for="password" id="password-label" style="display: none;">Password</label>
-        <span class="required" id="password-required" style="display: none;">*</span>
-        <br>
-        <input type="password" name="password" id="password"
-            placeholder="Password"
-            value="{{ request.form['password'] }}"
-            autocomplete="off"
-            style="display: none;"></input>
-        
        <button type="submit" class="btn btn-primary btn-lg">Submit</button>
     </form>
 {% endblock %}
