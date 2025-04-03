@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}User List{% endblock %}
+{% block content %}
+<table id="Users" class="table table-striped">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>staff ID</th>
+            <th>Last Login</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td><a href={{ url_for('auth.my_account', user_id=user.id)}}>{{user.username}}</a></td>
+            <td><a href="/single_history/staff/{{user.staff_id}}">{{user.staff_id}}</a></td>>
+            <td>{{moment(timestamp=user.last_login).format('LLL')}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

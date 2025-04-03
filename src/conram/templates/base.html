@@ -50,11 +50,19 @@
                             <a class="nav-link" href="{{ url_for('history') }}">History
                             </a>
                         </li>
+                        {% if 'admin' in current_user.roles %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button"
+                             aria-haspopup="true" aria-expanded="false">Admin</a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="{{ url_for('settings') }}">Settings</a>
+                                <a class="dropdown-item" href="{{ url_for('auth.user_create') }}">Create User</a>
+                                <a class="dropdown-item" href="{{ url_for('auth.user_list') }}">User List</a>
+                        </li>
+                        {% endif %}
                     </ul>
-                    <!-- <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('settings') }}">Settings
-                    </a>
-                    </li> -->
+
+
                     
                     <form class="d-flex", method="GET" action="/search" >
                     <input class="form-control me-sm-2" type="text" name="query" placeholder="Search">
@@ -65,15 +73,15 @@
                             <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button"
                                 aria-haspopup="true" aria-expanded="false">{{ current_user.username}}</a>
                             <div class="dropdown-menu">
-                                <a class="dropdown-item" href="{{ url_for('my_account') }}">My Account</a>
-                                <a class="dropdown-item" href="{{ url_for('logout') }}">Logout </a>
+                                <a class="dropdown-item" href="{{ url_for('auth.my_account', user_id=current_user.id) }}">My Account</a>
+                                <a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout </a>
                             </div>
                         </li>
                     </ul>
                 </div>
             {% else %}
             <li class="nav-item d-flex">
-                <a class="btn btn-secondary my-2 my-sm-0" href="{{ url_for('signin')  }}">Sign In/Sign Up</a>
+                <a class="btn btn-secondary my-2 my-sm-0" href="{{ url_for('auth.signin')  }}">Sign In/Sign Up</a>
             </li>
 
             {% endif %}

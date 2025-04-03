@@ -10,7 +10,9 @@
 <!-- Show if user is NOT logged in -->
 {% else %}
 
-<form action="{{ url_for('signin', next=request.args.get("next")) }}" method="POST" id="signin-form">
+<!-- Show if user is NOT logged in -->
+
+<form action="{{ url_for('auth.signin', next=request.args.get("next")) }}" method="POST" id="signin-form">
     <label>Username</label><span class="required">*</span>
     <input type="text" name="username" required placeholder="Username"/><br><br>
     

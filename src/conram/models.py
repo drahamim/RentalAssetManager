@@ -5,13 +5,6 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 
-roles_users = db.Table(
-    'roles_users',
-    db.Column('staff_id', db.String, db.ForeignKey('staffs.id', ondelete='CASCADE')),
-    db.Column('role_id', db.Integer, db.ForeignKey('roles.id', ondelete='CASCADE'))
-)
-
-
 class Asset(db.Model):
     __tablename__ = 'assets'
 
@@ -21,7 +14,7 @@ class Asset(db.Model):
     db.UniqueConstraint('id', name='asset_id')
 
 
-class Staff(db.Model, UserMixin):
+class Staff(db.Model):
     __tablename__ = 'staffs'
 
     id = Column(String, primary_key=True)
@@ -30,14 +23,6 @@ class Staff(db.Model, UserMixin):
     division = Column(String, nullable=False)
     department = Column(String, nullable=False)
     title = Column(String, nullable=False)
-    username = Column(String, nullable=False)
-    password = Column(String, nullable=False)
-    active = Column(db.Boolean(), default=False)
-    fs_uniquifier = Column(String(150), unique=True,
-                           nullable=False, default=lambda: str(uuid.uuid4()))
-    last_login = Column(DateTime, nullable=True)
-    roles = db.relationship('Role', secondary=roles_users,
-                            backref='staffed', cascade='all,delete')
 
 
 class Checkout(db.Model):
@@ -68,6 +53,28 @@ class GlobalSet(db.Model):
     setting = Column(String, nullable=False)
     db.UniqueConstraint('settingid', name='setting_id')
 
+
+roles_users = db.Table(
+    'roles_users',
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
+    db.Column('role_id', db.Integer, db.ForeignKey('roles.id'))
+)
+
+class User(db.Model, UserMixin):
+    __tablename__ = 'users'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(150), unique=True, nullable=False)
+    password = Column(String(150), nullable=False, server_default='')
+    staff_id = db.Column(String, db.ForeignKey('staffs.id'), nullable=True, unique=True)
+    email = Column(String(150), unique=True, nullable=False)
+    active = Column(db.Boolean(), default=True)
+    confirmed_at = Column(DateTime())
+    fs_uniquifier = Column(String(150), unique=True,
+                           nullable=False, default=lambda: str(uuid.uuid4()))
+    roles = db.relationship('Role', secondary=roles_users,
+                            backref='roled')
+    last_login = Column(DateTime, nullable=True)
 
 class Role(db.Model, RoleMixin):
     __tablename__ = 'roles'

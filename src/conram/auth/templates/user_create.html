@@ -1,12 +1,9 @@
-{% extends "base.html" %} {% block content %} {% block title %}
-<h2>Sign Up</h2>
-{% endblock %}
+{% extends "base.html" %} 
 
-<!-- Show only if user is logged in -->
-{% if current_user.is_authenticated %} You are already logged in.
-
-<!-- Show if user is NOT logged in -->
-{% else %}
+{% block content %} 
+<h2>{% block title %}
+  Create User 
+{% endblock %}</h2>
 
 <form action="#" method="POST" id="signup-form">
   <label>Username </label><span class="required">*</span>
@@ -39,22 +36,20 @@
     placeholder="Email"
   /><br /><br />
 
-  <label>First Name </label><span class="required">*</span>
+  <label>StaffID</label><span class="required">*</span>
   <input
     type="text"
-    name="first_name"
+    name="staff_id"
     required
-    placeholder="FirstName"
+    placeholder="Staff ID"
   /><br /><br />
-  <label>Last Name </label>
-  <input type="text" name="last_name" placeholder="LastName" /><br /><br />
-
+  <label>Role</label><span class="required">*</span>
+  <select name="role" required>
+    <option value="admin">Admin</option>
+    <option value="user">User</option>
+  </select>
+  <br /><br />
   <button type="submit" class="btn btn-primary btn-lg">Submit</button
   ><br /><br />
-
-  <!-- Link for signin -->
-  <span>Already have an account?</span>
-  <a href="/signin">Sign in</a>
 </form>
-
-{% endif %} {% endblock %}
+ {% endblock %}

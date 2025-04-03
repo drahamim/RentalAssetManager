@@ -1,0 +1,78 @@
+{% extends "base.html" %} 
+{% block content %} 
+<div class="account-details">
+    {% block title %}
+    {%if user.username != current_user.username%}
+        {{ user.username }}'s Account
+    {% else %}
+        {{ current_user.username }}'s Account
+    {% endif %}
+        {% endblock %}
+    
+    {%if user.username != current_user.username%}
+    <h2 class="account-title"> 
+    </h2>
+    <div class="account-info">
+        <p><strong>My Username:</strong> {{ user.username }}</p>
+        <p><strong>My First Name:</strong> {{ staff.first_name }}</p>
+        <p><strong>My Last Name:</strong> {{ staff.last_name }}</p>
+        <p><strong>Staff ID:</strong> {{ user.staff_id }}</p>
+        <p><strong>My Email:</strong> {{ user.email }}</p>
+        <p><strong>Roles:</strong> 
+            {% for role in user.roles %}
+                <span class="role">{{ role.name }}</span>{% if not loop.last %}, {% endif %}
+            {% endfor %}
+        </p>
+        <p><strong>My Last Login:</strong> {{ moment(timestamp=user.last_login).format('LLL') }}</p>
+    </div>
+    {% else %}
+    <h2 class="account-title">
+    </h2>
+    <div class="account-info">
+        <p><strong>My Username:</strong> {{ current_user.username }}</p>
+        <p><strong>My First Name:</strong> {{ staff.first_name }}</p>
+        <p><strong>My Last Name:</strong> {{ staff.last_name }}</p>
+        <p><strong>Staff ID:</strong> {{ current_user.staff_id }}</p>
+        <p><strong>My Email:</strong> {{ current_user.email }}</p>
+        <p><strong>Roles:</strong> 
+            {% for role in current_user.roles %}
+                <span class="role">{{ role.name }}</span>{% if not loop.last %}, {% endif %}
+            {% endfor %}
+        </p>
+        <p><strong>My Last Login:</strong> {{ moment(timestamp=current_user.last_login).format('LLL') }}</p>
+    </div>
+    {% endif %}
+    {% if "admin" in current_user.roles %}
+    <a class="btn btn-primary btn-lg" href="{{ url_for('auth.update_account', user_id=user.id) }}">Edit User</a>
+    {% endif %}
+</div>
+
+<style>
+    .account-details {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        margin: 20px;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+    }
+    .account-title {
+        font-size: 24px;
+        margin-bottom: 20px;
+        color: #333;
+    }
+    .account-info p {
+        margin: 10px 0;
+    }
+    .account-info strong {
+        color: #555;
+    }
+    .role {
+        background-color: #e0e0e0;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+</style>
+{% endblock %}
