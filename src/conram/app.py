@@ -670,8 +670,10 @@ def create_admin(password):
             username='admin',
             email = "admin@",
             active=True,
+            staff_id="admin",
             roles=['admin'],
             password=bcrypt.generate_password_hash(password).decode('utf-8'))
+        db.session.add(Staff(id='admin', first_name='admin', last_name='admin'))
         db.session.commit()
         app.logger.info('Admin user created')
         print('Admin user created')
