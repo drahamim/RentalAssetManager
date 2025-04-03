@@ -81,7 +81,7 @@ def signin():
             flash('Logged in successfully.', 'success')
             return redirect_dest(fallback=url_for('index'))
         else:
-            flash('Invalid username or password.')
+            flash('Invalid username or password.', 'danger')
             return render_template('signin.html')
     return render_template('signin.html')
 
