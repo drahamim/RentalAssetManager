@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
 from flask_moment import Moment
 from sqlalchemy import func
+from src.conram.auth.auth_routes import my_account
 from .models import Asset, Staff, Checkout, History, db, GlobalSet, Role, User
 from .forms import SettingsForm
 
@@ -28,7 +29,6 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'os.urandom(24)')
 app.config['upload_folder'] = '/tmp/uploads'
 moment = Moment(app)
 bcrypt = Bcrypt(app)
-
 
 
 # Flask Security Setup
@@ -58,7 +58,7 @@ with app.app_context():
     db.init_app(app)
     db.create_all()
     db.session.commit()
-migrate = Migrate(app, db,render_as_batch=True)
+migrate = Migrate(app, db, render_as_batch=True)
 
 # Init Roles
 with app.app_context():
@@ -109,9 +109,6 @@ def redirect_dest(fallback):
 # Register the blueprint
 
 
-
-
-
 @app.route('/')
 def index():
     assets = db.session.query(Asset).all()
@@ -126,9 +123,11 @@ def index():
             'AvailCount')
     ).group_by(Asset.asset_type).all()
     checkouts = db.session.query(Checkout).order_by('timestamp').all()
+    demo = db.session.query(GlobalSet).filter(
+        GlobalSet.settingid == "demo").first()
     return render_template(
         'index.html', assets=assets, asset_total=asset_total,
-        asset_type=asset_types, asset_status=asset_status, checkouts=checkouts)
+        asset_type=asset_types, asset_status=asset_status, checkouts=checkouts, demo=demo)
 
 
 @app.route('/create/asset', methods=('GET', 'POST'))
@@ -660,7 +659,6 @@ def search():
         return render_template('search.html', assets=asset, staff=staff)
 
 
-
 @app.cli.command('create-admin')
 @click.argument('password')
 def create_admin(password):
@@ -668,7 +666,7 @@ def create_admin(password):
     with app.app_context():
         user_datastore.create_user(
             username='admin',
-            email = "admin@",
+            email="admin@",
             active=True,
             staff_id="admin",
             roles=['admin'],
@@ -678,3 +676,23 @@ def create_admin(password):
         db.session.commit()
         app.logger.info('Admin user created')
         print('Admin user created')
+
+
+@app.cli.command('create-demo')
+def create_demo():
+    """Creates a demo app with admin/user profiles."""
+    with app.app_context():
+        for account in ['user', 'admin']:
+            user_datastore.create_user(
+                username=account,
+                email=f"{account}@",
+                active=True,
+                staff_id=account,
+                roles=account,
+                password=bcrypt.generate_password_hash(account).decode('utf-8'))
+            db.session.add(Staff(id=account, first_name=account, last_name='',
+                                 division='', department='', title=account))
+            db.session.add(GlobalSet(settingid='demo', setting=True))
+            db.session.commit()
+            app.logger.info(f'Demo user {account} created')
+        print('Demo users created')

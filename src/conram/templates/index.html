@@ -47,7 +47,30 @@
         </tbody>
       </table>
 {% else %}
-<h1>Welcome to the Asset Management System</h1>
-<p>Please log in to view your asset information.</p>
+  {% if demo %}
+  <h1>Welcome to the Asset Management System</h1>
+  <p>You are currently in demo mode. Please log in to view your asset information.</p>
+  <table class="table table-striped">
+        <thead>
+          <tr>
+            <th style="text-align:left">Account Name</th>
+            <th style="text-align:left">Password</th>
+          </tr>
+        </thead>
+        <tbody>
+            <tr>
+              <td>admin</td>
+              <td>admin</td>
+            </tr>
+            <tr>
+              <td>user</td>
+              <td>user</td>
+            </tr>
+        </tbody>
+      </table>
+  {% else %}
+  <h1>Welcome to the Asset Management System</h1>
+  <p>Please log in to view your asset information.</p>
+  {% endif %}
 {% endif %}
 {% endblock %}
