@@ -688,11 +688,12 @@ def create_demo():
                 email=f"{account}@",
                 active=True,
                 staff_id=account,
-                roles=account,
+                roles=[account],
                 password=bcrypt.generate_password_hash(account).decode('utf-8'))
+           
             db.session.add(Staff(id=account, first_name=account, last_name='',
                                  division='', department='', title=account))
-            db.session.add(GlobalSet(settingid='demo', setting=True))
+            db.session.add(GlobalSet(settingid='demo', setting="yes"))
             db.session.commit()
             app.logger.info(f'Demo user {account} created')
         print('Demo users created')
