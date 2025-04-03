@@ -55,7 +55,8 @@
                             <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button"
                              aria-haspopup="true" aria-expanded="false">Admin</a>
                             <div class="dropdown-menu">
-                                <a class="dropdown-item" href="{{ url_for('settings') }}">Settings</a>
+                                <!-- Disable settings page till developed -->
+                                <!--<a class="dropdown-item" href="{{ url_for('settings') }}">Settings</a>--> 
                                 <a class="dropdown-item" href="{{ url_for('auth.user_create') }}">Create User</a>
                                 <a class="dropdown-item" href="{{ url_for('auth.user_list') }}">User List</a>
                         </li>
