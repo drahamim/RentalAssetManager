@@ -689,6 +689,11 @@ def create_admin(password):
 def create_demo():
     """Creates a demo app with admin/user profiles."""
     with app.app_context():
+        app.logger.info('Creating demo users')
+         # Set app for demo mode
+         db.session.add(GlobalSet(settingid='demo', setting="yes"))
+         db.session.commit()
+         app.logger.info('Demo mode set')
         for account in ['user', 'admin']:
             user_datastore.create_user(
                 username=account,
@@ -700,7 +705,8 @@ def create_demo():
            
             db.session.add(Staff(id=account, first_name=account, last_name='',
                                  division='', department='', title=account))
-            db.session.add(GlobalSet(settingid='demo', setting="yes"))
+           
             db.session.commit()
             app.logger.info(f'Demo user {account} created')
+        
         print('Demo users created')
