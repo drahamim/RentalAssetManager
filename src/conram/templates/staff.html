@@ -10,8 +10,7 @@
         <th style="text-align:left">Division</th>
         <th style="text-align:left">Department</th>
         <th style="text-align:left">Title</th>
-        <th style="text-align:left">UserName</th>
-        <th style="text-align:left">Is Active</th>
+        <th style="text-align:left">Is User</th>
         <th style="text-align:left">Edit</th>
         <th style="text-align:left">History</th>
       </tr>
@@ -25,8 +24,7 @@
           <td>{{ staff.division }}</td>
           <td>{{ staff.department }}</td>
           <td>{{ staff.title }}</td>
-          <td>{{ staff.username }}</td>
-          <td>{% if staff.is_active != "" %}
+          <td>{% if staff.is_active%}
             <span style="color:green">Yes</span>
           {% else %}
             <span style="color:red">No</span>

@@ -14,7 +14,7 @@ from flask_moment import Moment
 from sqlalchemy import func
 from src.conram.auth.auth_routes import my_account
 from .models import Asset, Staff, Checkout, History, db, GlobalSet, Role, User
-from .forms import SettingsForm
+from .forms import SettingsForm, UploadForm
 
 from flask_login import LoginManager, login_required
 from flask_security import Security, SQLAlchemyUserDatastore, roles_accepted
@@ -244,6 +244,11 @@ def staff_create():
 @login_required
 def staffs():
     staff_list = db.session.query(Staff).order_by('id').all()
+    for staff in staff_list:
+        if db.session.query(User).filter(User.staff_id == staff.id).first():
+            staff.is_active = True
+        else:
+            staff.is_active = False            
     return render_template('staff.html', staffs=staff_list)
 
 
@@ -492,19 +497,21 @@ def single_history(rq_type, item_id):
 @login_required
 @roles_accepted('admin')
 def bulk_import():
+    form = UploadForm()
     if request.method == 'POST':
-        uploaded_file = request.files.get('file')
-        print(uploaded_file)
-        data_filename = secure_filename(uploaded_file.filename)
-        file_path = os.path.join(app.config['upload_folder'], data_filename)
-        uploaded_file.save(os.path.join(
-            app.config['upload_folder'], data_filename))
-        session['uploaded_data_file_path'] = file_path
-        form_type = request.form['select_type']
-
-        return redirect(url_for('showData', form_type=form_type))
-    if request.method == "GET":
-        return render_template('bulk_import.html')
+        if form.validate_on_submit():
+            file = form.file.data
+            sec_file_name = secure_filename(file.filename)
+            file_path = os.path.join(app.config['upload_folder'], sec_file_name)
+            file.save(file_path)
+            session['uploaded_data_file_path'] = file_path
+            return redirect(url_for('showData', form_type=form.data_type))
+        else:
+            flash(
+                'Invalid file type. Only CSV files are allowed.',
+                'danger')
+    
+    return render_template('bulk_import.html', form=form)
 
 
 def parseCSV_assets(filePath, asset_id, asset_type, asset_status):

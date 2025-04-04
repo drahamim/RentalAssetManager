@@ -126,6 +126,9 @@ def update_account(user_id):
     form.email.data = user.email
     form.first_name.data = staff_info.first_name
     form.last_name.data = staff_info.last_name
+    # form.roles.choices = [(role.id, role.name) for role in Role.query.all()]
+    # form.roles.default = [role.id for role in user.roles]
+    # form.process()
     return render_template('user_edit.html', form=form, user=user)
 
 

@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import SelectField, StringField, PasswordField, SubmitField
+from wtforms import FileField, SelectField, StringField, PasswordField, SubmitField, SelectMultipleField
 from wtforms.validators import DataRequired, EqualTo
+from flask_wtf.file import FileRequired, FileAllowed, FileField
 import pytz
 
 
@@ -34,3 +35,13 @@ class UpdateForm(FlaskForm):
     first_name = StringField('First Name', validators=[DataRequired()])
     last_name = StringField('Last Name')
     email = StringField('Email', render_kw=(dict(value='email')))
+    # roles = SelectField('Roles', choices=[])
+
+
+class UploadForm(FlaskForm):
+    data_type = SelectField('Data Type', choices=[
+        ('staff', 'Staff'), ('assets', 'Assets')])
+    file = FileField('File', validators=[
+        FileRequired(), FileAllowed(['csv'], 'CSV files only!')])
+    submit = SubmitField('Upload', render_kw={
+        'class': 'btn btn-primary', 'disabled': True})

@@ -35,15 +35,6 @@
                 value="{{ staff.department }}">
             </input>
         <br>
-        <label class="mt-4" for="Roles">Roles</label>
-        <br>
-        <div class="form-check">
-            {% for role in roles %}
-                <input class="for-check-input" type="checkbox" id="role_{{ role.id }}" name="roles" value="{{ role.id }}" {% if role.id in staff.roles %} checked {% endif %}>
-                <label class="form-check-label" for="role_{{ role.id }}">{{ role.name }}</label>
-                
-            {% endfor %}
-        </div>
         <br>
         <button type="submit" class="btn btn-primary btn-lg">Submit</button>
     </form>

@@ -11,14 +11,12 @@
                     <option value="{{ header }}">{{ header }}</option>
                 {% endfor %}
             </select>
-            <b>|</b>
             <label>Asset Type:</label>
             <select class="form-control" name="asset_type",id="assset_type">
                 {% for header in headers_list %}
                     <option value="{{ header }}">{{ header }}</option>
                 {% endfor %}
             </select>
-            <b>|</b>
             <label>Asset Status:</label>
             <select class="form-control" name="asset_status" id="asset_status">
                 <option value="Available">Available</option>
@@ -36,7 +34,6 @@
                     <option value="{{ header }}">{{ header }}</option>
                 {% endfor %}
             </select>
-            <b>|</b>
             <label>Last Name:</label>
             <select class="form-control" name="last_name",id="last_name">
                 {% for header in headers_list %}
@@ -51,7 +48,6 @@
                     <option value="{{ header }}">{{ header }}</option>
                 {% endfor %}
             </select>
-            <b>|</b>
             <label>Division:</label>
             <select class="form-control" name="division" id="division">
                 {% for header in headers_list %}
@@ -67,7 +63,6 @@
                 {% endfor %}
                 
             </select>
-            <b>|</b>
             <label>Title:</label>
             <select class="form-control" name="title" id="title">
                 {% for header in headers_list %}
@@ -75,6 +70,7 @@
                 {% endfor %}
                 <option value="">LEAVE BLANK</option>
             </select>
+            <br>
             <button type="submit" class="btn btn-primary btn-lg">Import</button>
         </form>
     {% endif %}
