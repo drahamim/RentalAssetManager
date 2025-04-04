@@ -51,9 +51,7 @@ class GlobalSet(db.Model):
 
     settingid = Column(String, primary_key=True)
     setting = Column(String, nullable=False)
-    __table_args__ = (
-        db.UniqueConstraint('settingid', name='setting_id'),
-    )
+    db.UniqueConstraint('settingid', name='setting_id')
 
 
 roles_users = db.Table(

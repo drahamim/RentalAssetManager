@@ -248,7 +248,7 @@ def staffs():
         if db.session.query(User).filter(User.staff_id == staff.id).first():
             staff.is_active = True
         else:
-            staff.is_active = False            
+            staff.is_active = False
     return render_template('staff.html', staffs=staff_list)
 
 
@@ -502,7 +502,8 @@ def bulk_import():
         if form.validate_on_submit():
             file = form.file.data
             sec_file_name = secure_filename(file.filename)
-            file_path = os.path.join(app.config['upload_folder'], sec_file_name)
+            file_path = os.path.join(
+                app.config['upload_folder'], sec_file_name)
             file.save(file_path)
             session['uploaded_data_file_path'] = file_path
             return redirect(url_for('showData', form_type=form.data_type))
@@ -510,7 +511,7 @@ def bulk_import():
             flash(
                 'Invalid file type. Only CSV files are allowed.',
                 'danger')
-    
+
     return render_template('bulk_import.html', form=form)
 
 
@@ -690,10 +691,9 @@ def create_demo():
     """Creates a demo app with admin/user profiles."""
     with app.app_context():
         app.logger.info('Creating demo users')
-         # Set app for demo mode
-         db.session.add(GlobalSet(settingid='demo', setting="yes"))
-         db.session.commit()
-         app.logger.info('Demo mode set')
+        # Set app for demo mode
+        db.session.add(GlobalSet(settingid='demo', setting="yes"))
+        app.logger.info('Demo mode set')
         for account in ['user', 'admin']:
             user_datastore.create_user(
                 username=account,
@@ -702,11 +702,11 @@ def create_demo():
                 staff_id=account,
                 roles=[account],
                 password=bcrypt.generate_password_hash(account).decode('utf-8'))
-           
+
             db.session.add(Staff(id=account, first_name=account, last_name='',
                                  division='', department='', title=account))
-           
+
             db.session.commit()
             app.logger.info(f'Demo user {account} created')
-        
+
         print('Demo users created')
