@@ -30,7 +30,7 @@ def redirect_dest(fallback):
 def user_create():
     if request.method == 'POST':
         user = User.query.filter_by(
-            email=request.form['username']).first()
+            username=request.form['username']).first()
         email = User.query.filter_by(
             email=request.form['email']).first()
 
