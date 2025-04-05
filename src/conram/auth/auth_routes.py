@@ -6,7 +6,7 @@ from src.conram.forms import LoginForm, RegisterForm, UpdateForm
 from src.conram.models import User, Role, db, Staff
 from flask_bcrypt import Bcrypt
 from datetime import datetime, timezone
-
+from urllib.parse import urlparse
 
 bp = Blueprint('auth', __name__, template_folder='templates')
 bcrypt = Bcrypt()
@@ -20,7 +20,10 @@ def redirect_dest(fallback):
         dest_url = fallback
     if dest == None:
         dest_url = fallback
-    return redirect(dest_url)
+    dest_url = dest_url.replace('\\', '')
+    if not urlparse(dest_url).netloc and not urlparse(dest_url).scheme:
+        return redirect(dest_url)
+    return redirect(fallback)
 
 
 @bp.route('/create/user', methods=['GET', 'POST'])
