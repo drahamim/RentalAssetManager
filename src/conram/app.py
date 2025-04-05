@@ -506,7 +506,8 @@ def bulk_import():
                 app.config['upload_folder'], sec_file_name)
             file.save(file_path)
             session['uploaded_data_file_path'] = file_path
-            return redirect(url_for('showData', form_type=form.data_type))
+            app.logger.error(form.data_type.data)
+            return redirect(url_for('showData', form_type=form.data_type.data))
         else:
             flash(
                 'Invalid file type. Only CSV files are allowed.',
