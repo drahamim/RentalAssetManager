@@ -2,7 +2,7 @@ from flask import Blueprint
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_security import roles_accepted
-from src.conram.forms import LoginForm, RegisterForm, UpdateForm
+from src.conram.forms import UpdateForm
 from src.conram.models import User, Role, db, Staff
 from flask_bcrypt import Bcrypt
 from datetime import datetime, timezone
@@ -18,7 +18,7 @@ def redirect_dest(fallback):
         dest_url = dest
     except Exception:
         dest_url = fallback
-    if dest == None:
+    if dest is None:
         dest_url = fallback
     dest_url = dest_url.replace('\\', '')
     if not urlparse(dest_url).netloc and not urlparse(dest_url).scheme:
@@ -105,6 +105,7 @@ def my_account(user_id):
     user = User.query.filter_by(id=user_id).first()
     staff_info = Staff.query.filter_by(id=user.staff_id).first()
     return render_template('my_account.html', user=user, staff=staff_info)
+
 
 @bp.route("/update_account/<user_id>", methods=['GET', 'POST'])
 @login_required

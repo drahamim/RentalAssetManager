@@ -1,24 +1,25 @@
 import os
-from datetime import datetime, timezone
 import subprocess
+from datetime import datetime, timezone
+from importlib.metadata import PackageNotFoundError, version
+from urllib.parse import urlparse
 
 import click
 import pandas as pd
-from flask import Flask, flash, redirect, render_template, request, url_for, session
+from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask_bcrypt import Bcrypt
 from flask_bootstrap import Bootstrap5
+from flask_login import LoginManager, login_required
 from flask_migrate import Migrate
-from importlib.metadata import version, PackageNotFoundError
+from flask_moment import Moment
+from flask_security import SQLAlchemyUserDatastore, Security, roles_accepted
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
-from flask_moment import Moment
-from sqlalchemy import func
-from src.conram.auth.auth_routes import my_account
-from .models import Asset, Staff, Checkout, History, db, GlobalSet, Role, User
-from .forms import SettingsForm, UploadForm
 
-from flask_login import LoginManager, login_required
-from flask_security import Security, SQLAlchemyUserDatastore, roles_accepted
-from flask_bcrypt import Bcrypt
+from .auth import auth_routes
+from .forms import SettingsForm, UploadForm
+from .models import Asset, Checkout, GlobalSet, History, Role, Staff, User, db
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
@@ -62,7 +63,6 @@ migrate = Migrate(app, db, render_as_batch=True)
 
 # Init Roles
 with app.app_context():
-    from .auth import auth_routes
     if not db.session.query(Role).filter(Role.name == 'admin').first():
         db.session.add(Role(name='admin', id=1, description='Admin Role'))
         app.logger.info('Admin role created')
@@ -94,8 +94,6 @@ def get_version():
 
 # ASSET ROUTES
 
-
-from urllib.parse import urlparse
 
 def redirect_dest(fallback):
     dest = request.args.get('next')
