@@ -95,15 +95,16 @@ def get_version():
 # ASSET ROUTES
 
 
+from urllib.parse import urlparse
+
 def redirect_dest(fallback):
     dest = request.args.get('next')
-    try:
-        dest_url = dest
-    except Exception:
-        dest_url = fallback
-    if dest == None:
-        dest_url = fallback
-    return redirect(dest_url)
+    if dest:
+        dest = dest.replace('\\', '/')
+        parsed_url = urlparse(dest)
+        if not parsed_url.netloc and not parsed_url.scheme:
+            return redirect(dest)
+    return redirect(fallback)
 
 
 # Register the blueprint
