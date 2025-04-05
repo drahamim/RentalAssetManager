@@ -11,10 +11,9 @@ class SettingsForm(FlaskForm):
 
 
 class LoginForm(FlaskForm):
-    username = SelectField('Username', choices=[])
-    password = SelectField('Password', choices=[])
-    submit = SelectField('Login', choices=[('login', 'Login')])
-
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Login')
 
 class RegisterForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
