@@ -34,7 +34,7 @@ class UpdateForm(FlaskForm):
         'Confirm Password', validators=[EqualTo('password')])
     first_name = StringField('First Name', validators=[DataRequired()])
     last_name = StringField('Last Name')
-    email = StringField('Email', render_kw=(dict(value='email')))
+    email = StringField('Email')
     # roles = SelectField('Roles', choices=[])
 
 
