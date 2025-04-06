@@ -1,0 +1,55 @@
+{% extends "base.html" %} 
+
+{% block content %} 
+<h2>{% block title %}
+  Create User 
+{% endblock %}</h2>
+
+<form action="#" method="POST" id="signup-form">
+  <label>Username </label><span class="required">*</span>
+  <input
+    type="text"
+    name="username"
+    required
+    placeholder="Username"
+  /><br /><br />
+
+  <label>Password </label><span class="required">*</span>
+  <input
+    type="password"
+    name="password"
+    required
+    placeholder="Password"
+  /><br /><br />
+  <label>Confirm Password </label><span class="required">*</span>
+  <input
+    type="password"
+    name="confirm_password"
+    required
+    placeholder="Confirm"
+  /><br /><br />
+  <label>Email </label><span class="required">*</span>
+  <input
+    type="text"
+    name="email"
+    required
+    placeholder="Email"
+  /><br /><br />
+
+  <label>Staff ID</label><span class="required">*</span>
+  <input
+    type="text"
+    name="staff_id"
+    required
+    placeholder="Staff ID"
+  /><br /><br />
+  <label>Role</label><span class="required">*</span>
+  <select name="role" required>
+    <option value="admin">Admin</option>
+    <option value="user">User</option>
+  </select>
+  <br /><br />
+  <button type="submit" class="btn btn-primary btn-lg">Submit</button
+  ><br /><br />
+</form>
+ {% endblock %}

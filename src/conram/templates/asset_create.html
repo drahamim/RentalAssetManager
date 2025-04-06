@@ -1,12 +1,19 @@
 {% extends 'base.html' %}
+{% block head %}
+    <script type="text/javascript">
+        // Focus on Asset ID on load
+        window.onload = function FocusOnLoad() {
+            document.getElementById("id").focus();
+        }
+    </script>
+{% endblock %}
 
 {% block content %}
     <h1>{% block title %} Create Asset {% endblock %}</h1>
     <form method="POST">
-       <label for="title">ID</label>
+       <label for="title">Asset ID</label>
        <span class="required">*</span>
-       <br>
-       <input type="text" name="id"
+       <input type="text" name="id" id="id"
               placeholder="Asset ID"
               required="required"
               value="{{ request.form['id'] }}"></input>
@@ -14,7 +21,6 @@
 
        <label for="type">Asset Type</label>
        <span class="required">*</span>
-       <br>
        <select id="asset_type", name="asset_type" required="required">
               <option value="" disabled selected>Select Type</option>
               <option value="mobile">Base Station</option>
@@ -26,15 +32,15 @@
        </select>
        <br>
        <label for="status">Asset Status</label>
-       <br>
-       <select id="asset_status" name="sset_status">
-              <option value="" disabled selected>Select Status</option>
+       <select id="asset_status" name="asset_status">
+              <option value="">Select Status</option>
               <option value="Available">Available</option>
               <option value="Good">Good</option>
               <option value="Damaged">Damaged</option>
               <option value="Checkedout">Checked Out</option>
        </select>
-       <br>
+       <br><br>
+       
        <button type="submit" class="btn btn-primary btn-lg">Submit</button>
     </form>
 {% endblock %}

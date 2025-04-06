@@ -1,18 +1,25 @@
 import os
-from datetime import datetime
 import subprocess
+from datetime import datetime, timezone
+from importlib.metadata import PackageNotFoundError, version
+from urllib.parse import urlparse
 
+import click
 import pandas as pd
-from flask import Flask, flash, redirect, render_template, request, url_for, session
+from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask_bcrypt import Bcrypt
 from flask_bootstrap import Bootstrap5
+from flask_login import LoginManager, login_required
 from flask_migrate import Migrate
-from importlib.metadata import version, PackageNotFoundError
+from flask_moment import Moment
+from flask_security import SQLAlchemyUserDatastore, Security, roles_accepted
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
-from flask_moment import Moment
-from sqlalchemy import func
-from .models import Asset, Staff, Checkout, History, db, GlobalSet
-from .forms import SettingsForm
+
+from .auth import auth_routes
+from .forms import SettingsForm, UploadForm
+from .models import Asset, Checkout, GlobalSet, History, Role, Staff, User, db
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
@@ -22,6 +29,27 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'os.urandom(24)')
 app.config['upload_folder'] = '/tmp/uploads'
 moment = Moment(app)
+bcrypt = Bcrypt(app)
+
+
+# Flask Security Setup
+user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+security = Security(app, user_datastore)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'signin'
+
+
+@login_manager.user_loader
+def load_user(id):
+    return User.query.filter_by(fs_uniquifier=id).first()
+
+
+@login_manager.unauthorized_handler
+def unauthorized():
+    flash('You must be logged in to access this page.', 'warning')
+    return redirect(url_for('auth.signin', next=request.endpoint))
+
 
 if not os.path.exists(app.config['upload_folder']):
     os.makedirs(app.config['upload_folder'])
@@ -31,8 +59,19 @@ with app.app_context():
     db.init_app(app)
     db.create_all()
     db.session.commit()
-migrate = Migrate(app, db)
+migrate = Migrate(app, db, render_as_batch=True)
 
+# Init Roles
+with app.app_context():
+    if not db.session.query(Role).filter(Role.name == 'admin').first():
+        db.session.add(Role(name='admin', id=1, description='Admin Role'))
+        app.logger.info('Admin role created')
+    if not db.session.query(Role).filter(Role.name == 'user').first():
+        db.session.add(Role(name='user', id=2, description='User Role'))
+        app.logger.info('User role created')
+    db.session.commit()
+    app.logger.info('Roles created')
+    app.register_blueprint(auth_routes.bp)
 # @app.context
 # def inject_settings():
 #     if not db.session.query(GlobalSet).filter(GlobalSet.settingid == "timezone"):
@@ -56,6 +95,19 @@ def get_version():
 # ASSET ROUTES
 
 
+def redirect_dest(fallback):
+    dest = request.args.get('next')
+    if dest:
+        dest = dest.replace('\\', '/')
+        parsed_url = urlparse(dest)
+        if not parsed_url.netloc and not parsed_url.scheme:
+            return redirect(dest)
+    return redirect(fallback)
+
+
+# Register the blueprint
+
+
 @app.route('/')
 def index():
     assets = db.session.query(Asset).all()
@@ -70,19 +122,24 @@ def index():
             'AvailCount')
     ).group_by(Asset.asset_type).all()
     checkouts = db.session.query(Checkout).order_by('timestamp').all()
+    demo = db.session.query(GlobalSet).filter(
+        GlobalSet.settingid == "demo").first()
     return render_template(
         'index.html', assets=assets, asset_total=asset_total,
-        asset_type=asset_types, asset_status=asset_status, checkouts=checkouts)
+        asset_type=asset_types, asset_status=asset_status, checkouts=checkouts, demo=demo)
 
 
 @app.route('/create/asset', methods=('GET', 'POST'))
+@login_required
+@roles_accepted('admin')
 def asset_create():
 
     if request.method == 'POST':
         asset_id = request.form['id']
         asset_type = request.form['asset_type']
         asset_status = request.form['asset_status']
-
+        app.logger.info(
+            f'Creating asset: {asset_id}, {asset_type}, {asset_status}')
         if not asset_id or not asset_status or not asset_type:
             flash(
                 'All fields are required',
@@ -131,6 +188,8 @@ def asset_edit(asset_id):
 
 
 @app.route('/delete/asset/<asset_id>', methods=('POST',))
+@login_required
+@roles_accepted('admin')
 def asset_delete(asset_id):
     db.session.delete(Asset.query.get(asset_id))
     db.session.commit()
@@ -142,6 +201,7 @@ def asset_delete(asset_id):
 
 
 @app.route('/create/staff', methods=('GET', 'POST'))
+@login_required
 def staff_create():
 
     if request.method == 'POST':
@@ -180,12 +240,20 @@ def staff_create():
 
 
 @app.route('/staffs')
+@login_required
 def staffs():
     staff_list = db.session.query(Staff).order_by('id').all()
+    for staff in staff_list:
+        if db.session.query(User).filter(User.staff_id == staff.id).first():
+            staff.is_active = True
+        else:
+            staff.is_active = False
     return render_template('staff.html', staffs=staff_list)
 
 
 @app.route('/edit/staff/<staff_id>', methods=('GET', 'POST'))
+@login_required
+@roles_accepted('admin')
 def staff_edit(staff_id):
     staff = db.session.query(Staff).filter_by(id=staff_id).first()
     if request.method == 'POST':
@@ -218,6 +286,7 @@ def staff_edit(staff_id):
 
 
 @app.route('/checkout', methods=('GET', 'POST'))
+@login_required
 def checkout():
 
     if request.method == 'POST':
@@ -276,7 +345,7 @@ def checkout():
                 db.session.add(Checkout(
                     assetid=asset.id, staffid=staffer.id,
                     department=staffer.department,
-                    timestamp=datetime.now()))
+                    timestamp=datetime.now(timezone.utc)))
                 print('update asset')
                 db.session.query(Asset).filter(
                     Asset.id == asset.id).update(values={
@@ -290,7 +359,7 @@ def checkout():
                     db.session.add(Checkout(
                         assetid=accessory.id, staffid=staffer.id,
                         department=staffer.department,
-                        timestamp=datetime.now()))
+                        timestamp=datetime.now(timezone.utc)))
                     db.session.query(Asset).filter(func.lower(
                         Asset.id) == accessory_id.lower()).update(values={
                             'asset_status': 'checkedout'})
@@ -309,6 +378,7 @@ def checkout():
 
 
 @app.route('/return_asset', methods=('GET', 'POST'))
+@login_required
 def return_asset():
     if request.method == 'POST':
         asset_id = request.form['id']
@@ -335,8 +405,7 @@ def return_asset():
                     department=staffer.department,
                     division=staffer.division,
                     checkouttime=checkout_info.timestamp,
-                    returntime=datetime.now()
-                ))
+                    returntime=datetime.now(timezone.utc)))
                 print('update asset')
                 db.session.query(Asset).filter(
                     Asset.id == checkout_info.assetid).update(values={
@@ -382,6 +451,7 @@ def return_asset():
 
 
 @app.route('/history')
+@login_required
 def history():
     try:
         history_list = db.session.query(History).order_by('returntime').all()
@@ -395,12 +465,14 @@ def history():
 
 
 @app.route('/assets')
+@login_required
 def assets():
     asset_list = Asset.query.all()
     return render_template('status.html', assets=asset_list)
 
 
-@app.route('/single_history/<rq_type>/<item_id>')
+@app.route('/single_history/<rq_type>/<item_id>', methods=['GET'])
+@login_required
 def single_history(rq_type, item_id):
 
     if rq_type == 'asset':
@@ -421,20 +493,26 @@ def single_history(rq_type, item_id):
 
 # IMPORT TASKS
 @app.route('/bulk_import', methods=('GET', 'POST'))
+@login_required
+@roles_accepted('admin')
 def bulk_import():
+    form = UploadForm()
     if request.method == 'POST':
-        uploaded_file = request.files.get('file')
-        print(uploaded_file)
-        data_filename = secure_filename(uploaded_file.filename)
-        file_path = os.path.join(app.config['upload_folder'], data_filename)
-        uploaded_file.save(os.path.join(
-            app.config['upload_folder'], data_filename))
-        session['uploaded_data_file_path'] = file_path
-        form_type = request.form['select_type']
+        if form.validate_on_submit():
+            file = form.file.data
+            sec_file_name = secure_filename(file.filename)
+            file_path = os.path.join(
+                app.config['upload_folder'], sec_file_name)
+            file.save(file_path)
+            session['uploaded_data_file_path'] = file_path
+            app.logger.error(form.data_type.data)
+            return redirect(url_for('showData', form_type=form.data_type.data))
+        else:
+            flash(
+                'Invalid file type. Only CSV files are allowed.',
+                'danger')
 
-        return redirect(url_for('showData', form_type=form_type))
-    if request.method == "GET":
-        return render_template('bulk_import.html')
+    return render_template('bulk_import.html', form=form)
 
 
 def parseCSV_assets(filePath, asset_id, asset_type, asset_status):
@@ -484,6 +562,7 @@ def parseCSV_staff(
 
 
 @app.route('/show_data', methods=["GET", "POST"])
+@login_required
 def showData():
     # Retrieving uploaded file path from session
     data_file_path = session.get('uploaded_data_file_path', None)
@@ -525,6 +604,8 @@ def showData():
 
 
 @app.route('/settings', methods=['GET', 'POST'])
+@login_required
+@roles_accepted('admin')
 def settings():
     form = SettingsForm()
     if form.validate_on_submit():
@@ -541,6 +622,7 @@ def settings():
 
 
 @app.route('/search', methods=["GET", "POST"])
+@login_required
 def search():
     app.logger.info('Search request')
     query = request.args.get('query')
@@ -583,3 +665,48 @@ def search():
         app.logger.info
         (len(staff))
         return render_template('search.html', assets=asset, staff=staff)
+
+
+@app.cli.command('create-admin')
+@click.argument('password')
+def create_admin(password):
+    """Creates an admin user."""
+    with app.app_context():
+        user_datastore.create_user(
+            username='admin',
+            email="admin@",
+            active=True,
+            staff_id="admin",
+            roles=['admin'],
+            password=bcrypt.generate_password_hash(password).decode('utf-8'))
+        db.session.add(Staff(id='admin', first_name='admin', last_name='',
+                             division='', department='', title='admin'))
+        db.session.commit()
+        app.logger.info('Admin user created')
+        print('Admin user created')
+
+
+@app.cli.command('create-demo')
+def create_demo():
+    """Creates a demo app with admin/user profiles."""
+    with app.app_context():
+        app.logger.info('Creating demo users')
+        # Set app for demo mode
+        db.session.add(GlobalSet(settingid='demo', setting="yes"))
+        app.logger.info('Demo mode set')
+        for account in ['user', 'admin']:
+            user_datastore.create_user(
+                username=account,
+                email=f"{account}@",
+                active=True,
+                staff_id=account,
+                roles=[account],
+                password=bcrypt.generate_password_hash(account).decode('utf-8'))
+
+            db.session.add(Staff(id=account, first_name=account, last_name='',
+                                 division='', department='', title=account))
+
+            db.session.commit()
+            app.logger.info(f'Demo user {account} created')
+
+        print('Demo users created')
