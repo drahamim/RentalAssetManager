@@ -1,5 +1,5 @@
 Bootstrap-Flask == 2.5.0
-click           == 8.2.0
+click           == 8.2.1
 dominate        == 2.9.1
 email-validator   == 2.2.0
 Flask           == 3.1.1
@@ -19,13 +19,13 @@ Jinja2          == 3.1.6
 libsass         == 0.23.0
 MarkupSafe      == 3.0.2
 numpy           == 2.2.6
-pandas          == 2.2.3
+pandas          == 2.3.0
 pip             == 25.1.1
 pip-install         == 1.3.5
 psycopg2-binary == 2.9.10
 python-dateutil == 2.9.0.post0
 pytz            == 2025.2
-setuptools      == 80.7.1
+setuptools      == 80.9.0
 six             == 1.17.0
 sqlalchemy      == 2.0.41
 toml            == 0.10.2
@@ -34,4 +34,4 @@ visitor         == 0.1.3
 webassets       == 2.0
 Werkzeug        == 3.1.3
 WTForms         == 3.2.1
-zipp            == 3.21.0
+zipp            == 3.23.0
